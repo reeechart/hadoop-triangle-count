@@ -19,27 +19,6 @@ import org.apache.hadoop.util.GenericOptionsParser;
 public class TwitterTriangleCount {
 	private static final String INTERMEDIATE_OUTPUT_PATH_1 = "intermediate_output_one";
 
-	public static class LongArrayWritable extends ArrayWritable {
-		public LongArrayWritable(LongWritable[] values) {
-			super(LongWritable.class, values);
-		}
-
-		@Override
-		public LongWritable[] get() {
-			return (LongWritable[]) super.get();
-		}
-
-		@Override
-		public String toString() {
-			String result = "";
-			LongWritable[] values = get();
-			for (int i = 0; i < values.length; i++) {
-				result = result + " " + values[i].toString();
-			}
-			return result;
-		}
-	}
-
 	public static class UndirectedGraphMapper extends Mapper<LongWritable, Text, LongWritable, LongWritable> {
 		public void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
 			LongWritable mapKey = new LongWritable();
