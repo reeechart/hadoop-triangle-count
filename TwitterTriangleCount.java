@@ -44,8 +44,14 @@ public class TwitterTriangleCount {
 	}
 
 	public static class UndirectedGraphReducer extends Reducer<LongWritable, LongWritable, LongWritable, LongWritable> {
-		public reduce(LongWritable key, Iterable<LongWritable> values, COntext context) throws IOException, InterruptedException {
-			
+		public reduce(LongWritable key, Iterable<LongWritable> values, Context context) throws IOException, InterruptedException {
+			Set<LongWritable> uniqueFollowers = HashSet<LongWritable>();
+			for (LongWritable value : values) {
+				uniqueFollowers.add(value);
+			}
+			for (LongWritable uniqueFollower : uniqueFollowers) {
+				context.write(key, uniqueFollower);
+			}
 		}
 	}
 
