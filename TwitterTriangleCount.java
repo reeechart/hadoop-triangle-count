@@ -66,7 +66,7 @@ public class TwitterTriangleCount {
 		}
 	}
 
-	public static class UndirectedGraphReducer extends Reducer<LongWritable, LongWritable, LongWritable, LongWritable> {
+	public static class UndirectedGraphReducer extends Reducer<LongWritable, LongWritable, Text, Text> {
 		public reduce(LongWritable key, Iterable<LongWritable> values, Context context) throws IOException, InterruptedException {
 			Set<LongWritable> uniqueFollowers = HashSet<LongWritable>();
 
@@ -74,29 +74,31 @@ public class TwitterTriangleCount {
 				uniqueFollowers.add(value);
 			}
 			for (LongWritable uniqueFollower : uniqueFollowers) {
-				context.write(key, uniqueFollower);
+				context.write(new Text(key), new Text(uniqueFollower));
 			}
 		}
 	}
 
-	public static class FollowersMapper extends Mapper<LongWritable, LongWritable, LongWritable, LongWritable> {
-		public map(LongWritable key, LongWritable value Context context) throws IOException, InterruptedException {
-			context.write(key, value);
+	public static class FollowersMapper extends Mapper<Text, Text, LongWritable, LongWritable> {
+		public map(LongWritable key, LongWritable value, Context context) throws IOException, InterruptedException {
+			StringTokenizer keyTokenizer = new StringTokenizer(key.toString());
+			StringTokenizer valueTokenizer = new StringTokenizer(value.toString());
+			long outKey = Long.parseLong(keyTokenizer.nextToken());
+			long outValue = Long.parseLong(valueTokenizer.nextToken());
+			context.write(new LongWritable(outKey), new LongWritable(outValue));
 		}
 	}
 
-	public static class FollowersReducer extends Reducer<LongWritable, LongWritable, LongWritable, TupleWritable> {
-		public reduce(LongWritable key, Iterable<LongWritable>, Context context) throws IOException, InterruptedException {
+	public static class FollowersReducer extends Reducer<LongWritable, LongWritable, Text, Text> {
+		public reduce(LongWritable key, Iterable<LongWritable> values, Context context) throws IOException, InterruptedException {
 			LongWritable[] followerTuple = new LongWritable[2];
 			List<LongWritable> followersList = new ArrayList<LongWritable>();
 
 			for (LongWritable followerOne : values) {
-				followerTuple[0] = followerOne;
 				for (LongWritable followerTwo: values) {
-					followerTuple[1] = followerTwo;
-					if (followerOne.compareTo(followerTwo) != 0) {
-						TupleWritable tuple = new TupleWritable(followerTuple);
-						context.write(key, followerTuple);
+					if (followerOne.compareTo(followerTwo) < 0) {
+						String outValue = followerOne.get().toString() + "#" + followerTwo.get().toString();
+						context.write(new Text(key), new Text(outValue));
 					}
 				}
 			}
