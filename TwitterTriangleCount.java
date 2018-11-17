@@ -84,6 +84,20 @@ public class TwitterTriangleCount {
 		}
 	}
 
+	public static class TriangleMapper extends Mapper<Text, Text, Text, Text> {
+		public map(Text key, Text value, Context context) throws IOException, InterruptedException {
+			String[] splittedValue = value.split("#")
+			if (splittedValue.length == 1) {
+				// original data
+				String newKey = key.toString() + "#" + value.toString();
+				context.write(new Text(newKey), "$");
+			} else if (splittedValue.length == 2) {
+				// two-path data
+				context.write(value, key);
+			}
+		}
+	}
+
 	public static void main(String[] args) throws Exception {
 		Configuration conf = new Configuration();
 
