@@ -98,6 +98,27 @@ public class TwitterTriangleCount {
 		}
 	}
 
+	public static class TriangleReducer extends Reducer<Text, Text, Text, LongWritable> {
+		public reduce(Text key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
+			boolean connected = false;
+			static long totalTriangles = 0;
+			long triangles = 0;
+			for (Text value : values) {
+				valueString = value.toString();
+				if valueString.equals("$") {
+					connected = true;
+				} else {
+					triangles += 1;
+				}
+			}
+			if (connected) {
+				totalTriangles += triangles;
+			}
+			String resultKey = "total_triangles";
+			context.write(new Text(resultKey), new LongWritable(totalTriangles));
+		}
+	}
+
 	public static void main(String[] args) throws Exception {
 		Configuration conf = new Configuration();
 
