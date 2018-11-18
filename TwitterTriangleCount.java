@@ -46,8 +46,8 @@ public class TwitterTriangleCount {
 	}
 
 	public static class UndirectedGraphReducer extends Reducer<LongWritable, LongWritable, Text, Text> {
-		public reduce(LongWritable key, Iterable<LongWritable> values, Context context) throws IOException, InterruptedException {
-			Set<LongWritable> uniqueFollowers = HashSet<LongWritable>();
+		public void reduce(LongWritable key, Iterable<LongWritable> values, Context context) throws IOException, InterruptedException {
+			Set<LongWritable> uniqueFollowers = new HashSet<LongWritable>();
 
 			for (LongWritable value : values) {
 				uniqueFollowers.add(value);
@@ -59,7 +59,7 @@ public class TwitterTriangleCount {
 	}
 
 	public static class FollowersMapper extends Mapper<Text, Text, LongWritable, LongWritable> {
-		public map(LongWritable key, LongWritable value, Context context) throws IOException, InterruptedException {
+		public void map(LongWritable key, LongWritable value, Context context) throws IOException, InterruptedException {
 			StringTokenizer keyTokenizer = new StringTokenizer(key.toString());
 			StringTokenizer valueTokenizer = new StringTokenizer(value.toString());
 			long outKey = Long.parseLong(keyTokenizer.nextToken());
@@ -69,7 +69,7 @@ public class TwitterTriangleCount {
 	}
 
 	public static class FollowersReducer extends Reducer<LongWritable, LongWritable, Text, Text> {
-		public reduce(LongWritable key, Iterable<LongWritable> values, Context context) throws IOException, InterruptedException {
+		public void reduce(LongWritable key, Iterable<LongWritable> values, Context context) throws IOException, InterruptedException {
 			LongWritable[] followerTuple = new LongWritable[2];
 			List<LongWritable> followersList = new ArrayList<LongWritable>();
 
@@ -85,8 +85,8 @@ public class TwitterTriangleCount {
 	}
 
 	public static class TriangleMapper extends Mapper<Text, Text, Text, Text> {
-		public map(Text key, Text value, Context context) throws IOException, InterruptedException {
-			String[] splittedValue = value.split("#")
+		public void map(Text key, Text value, Context context) throws IOException, InterruptedException {
+			String[] splittedValue = value.split("#");
 			if (splittedValue.length == 1) {
 				// original data
 				String newKey = key.toString() + "#" + value.toString();
@@ -99,13 +99,13 @@ public class TwitterTriangleCount {
 	}
 
 	public static class TriangleReducer extends Reducer<Text, Text, Text, LongWritable> {
-		public reduce(Text key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
+		static long totalTriangles = 0;
+		public void reduce(Text key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
 			boolean connected = false;
-			static long totalTriangles = 0;
 			long triangles = 0;
 			for (Text value : values) {
-				valueString = value.toString();
-				if valueString.equals("$") {
+				String valueString = value.toString();
+				if (valueString.equals("$")) {
 					connected = true;
 				} else {
 					triangles += 1;
