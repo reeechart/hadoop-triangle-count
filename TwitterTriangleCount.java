@@ -17,7 +17,7 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.GenericOptionsParser;
 
 public class TwitterTriangleCount {
-	private static final String INTERMEDIATE_OUTPUT_PATH_1 = "intermediate_output_one";
+	private static final String INTERMEDIATE_OUTPUT_PATH = "intermediate_output";
 
 	public static class UndirectedGraphMapper extends Mapper<LongWritable, Text, LongWritable, LongWritable> {
 		public void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
@@ -121,19 +121,47 @@ public class TwitterTriangleCount {
 
 	public static void main(String[] args) throws Exception {
 		Configuration conf = new Configuration();
-
-	    Job job = Job.getInstance(conf, "twitter_triangle_count");
+	    Job job = Job.getInstance(conf, "GraphUndirecterMapReduceJob");
 	    job.setJarByClass(TwitterTriangleCount.class);
 	    job.setMapperClass(UndirectedGraphMapper.class);
+	    job.setReducerClass(UndirectedGraphReducer.class);
 	    job.setMapOutputKeyClass(LongWritable.class);
 	    job.setMapOutputValueClass(LongWritable.class);
 	    job.setNumReduceTasks(0);
-	    job.setOutputKeyClass(LongWritable.class);
-	    job.setOutputValueClass(LongWritable.class);
+	    job.setOutputKeyClass(Text.class);
+	    job.setOutputValueClass(Text.class);
+	    job.waitForCompletion(true);
 
 	    FileInputFormat.addInputPath(job, new Path(args[0]));
-	    FileOutputFormat.setOutputPath(job, new Path(args[1]));
+	    FileOutputFormat.setOutputPath(job, new Path(INTERMEDIATE_OUTPUT_PATH));
 
-	    System.exit(job.waitForCompletion(true) ? 0 : 1);
+	    Configuration conf2 = new Configuration();
+	    Job job2 = Job.getInstance(conf2, "TwoPathMapReduceJob");
+	    job2.setJarByClass(TwitterTriangleCount.class);
+	    job2.setMapperClass(FollowersMapper.class);
+	    job2.setReducerClass(FollowersReducer.class);
+	    job2.setMapOutputKeyClass(LongWritable.class);
+	    job2.setMapOutputValueClass(LongWritable.class);
+	    job2.setOutputKeyClass(Text.class);
+	    job2.setOutputValueClass(Text.class);
+	    job2.waitForCompletion(true);
+
+	    FileInputFormat.addInputPath(job2, new Path(INTERMEDIATE_OUTPUT_PATH));
+	    FileOutputFormat.setOutputPath(job2, new Path(INTERMEDIATE_OUTPUT_PATH));
+
+	    Configuration conf3 = new Configuration();
+	    Job job3 = Job.getInstance(conf3, "TriangleCounterJob");
+	    job3.setJarByClass(TwitterTriangleCount.class);
+	    job3.setMapperClass(TriangleMapper.class);
+	    job3.setReducerClass(TriangleReducer.class);
+	    job3.setMapOutputKeyClass(Text.class);
+	    job3.setMapOutputValueClass(Text.class);
+	    job3.setOutputKeyClass(Text.class);
+	    job3.setOutputValueClass(LongWritable.class);
+
+	    FileInputFormat.addInputPath(job3, new Path(INTERMEDIATE_OUTPUT_PATH));
+	    FileInputFormat.setOutputPath(job3, new Path(args[1]));
+
+	    System.exit(job3.waitForCompletion(true) ? 0 : 1);
 	}
 }
